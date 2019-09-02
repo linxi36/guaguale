@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        #myCanvas {
+            /* background: url('./img/wzj.jpg'); */
+            background-size: 100% 100%;
+            
+        }
+    </style>
+</head>
+
+<body>
+    <canvas width="400" height="400" id="myCanvas"></canvas>
+    <script>
+        var myCanvas = document.getElementById("myCanvas");
+        var ctx = myCanvas.getContext("2d");
+        var w = myCanvas.width;
+        var h = myCanvas.height;
+        var lastPos = {};
+        function init() {
+            var img = new Image();
+            var random = Math.random();
+            console.log(random);
+            //中奖的概率
+            if (random < 0.1) {
+                //添加src判断图片加载
+                img.src = './img/zj.jpg';
+            } else {
+                img.src = './img/wzj.jpg';
+            }
+            // 必须等图片加载完成才能进行点击事件
+            img.onload = function () {
+                myCanvas.style.backgroundImage = 'url(' + img.src + ')';
+                //鼠标按下
+                myCanvas.addEventListener('mousedown', dowFun);
+            }
+            //灰色蒙层
+            ctx.beginPath();
+            ctx.fillStyle = "#ccc";
+            ctx.fillRect(0, 0, w, h);
+            ctx.globalCompositeOperation = "destination-out";
+        }
+        init();
+        function dowFun(e) {
+            lastPos.x = e.clientX - myCanvas.offsetLeft;
+            lastPos.y = e.clientY - myCanvas.offsetTop;
+            //按下鼠标时画上一个圆(作清除蒙层作用)
+            ctx.beginPath();
+            ctx.arc(lastPos.x, lastPos.y, 20, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            myCanvas.addEventListener('mousemove', moveFun);
+            document.body.addEventListener('mouseup', upFun);
+        }
+        function moveFun(e) {
+            var x = e.clientX - myCanvas.offsetLeft;
+            var y = e.clientY - myCanvas.offsetTop;
+            //断点处理(用连线解决)
+            ctx.beginPath();
+            ctx.moveTo(lastPos.x, lastPos.y);
+            ctx.lineTo(x, y);
+            ctx.lineWidth = 40;
+            //处理线的两头，改成圆
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            //储存上一次的点，方便下次的连接
+            lastPos.x = x;
+            lastPos.y = y;
+        }
+        function upFun() {
+            myCanvas.removeEventListener('mousemove', moveFun);
+            myCanvas.removeEventListener('mouseup', upFun);
+            clearCover();
+        }
+        function clearCover() {
+            //获取Canvas所有的像素值
+            var imageData = ctx.getImageData(0, 0, w, h);
+            var sum = 0;
+            for (var i = 0; i < imageData.data.length; i += 4) {
+                //imageData.data == 0 则表明此时是透明状态
+                if (imageData.data[i] == 0) {
+                    sum++;
+                }
+            }
+            //清除的蒙层大于画布(canvas)的总面积的百分之70时清除画布
+            if (sum > w * h * 0.7) {
+                //清屏操作
+                ctx.clearRect(0, 0, w, h);
+            }
+        }
+    </script>
+</body>
+
+</html>
